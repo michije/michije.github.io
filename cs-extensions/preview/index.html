@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>ISA panel preview</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#111;font:14px Arial;color:#ddd}nav{display:flex;align-items:center;gap:18px;padding:15px 24px;background:#252525}nav strong{margin-right:auto}button{padding:8px 14px;cursor:pointer}iframe{display:block;width:100%;height:calc(100vh - 66px);border:0}</style></head>
+<body><nav><strong>Preview · sample data</strong><label><input type="checkbox" id="drive"> Driving mode</label><label><input type="checkbox" id="light"> Light</label><button id="reset">Reset selection</button></nav><iframe id="panel" src="../panel/index.html" title="ISA by driver profile" sandbox="allow-scripts"></iframe><script type="module">
+const ids=["a".repeat(64),"b".repeat(64),"c".repeat(64)];let selected=[];
+window.addEventListener("message",event=>{
+  if(event.source!==document.getElementById("panel").contentWindow||event.data?.csdk!==1)return;
+  const {id,method,params}=event.data;let result;
+  if(method==="theme")result={mode:document.getElementById("light").checked?"light":"dark"};
+  else if(method==="fonts")result=null;
+  else if(method==="settings.get")result={settings:[{id:"dev.michije.isa-profiles.muted_profiles",value:selected.join("\n")}]};
+  else if(method==="settings.set"){
+    if(document.getElementById("drive").checked){event.source.postMessage({csdk:1,id,error:{code:"forbidden"}},"*");return;}
+    selected=(params.value||"").split("\n").map(v=>v.trim()).filter(Boolean);result={ok:true};
+  }else if(method==="data.get")result=JSON.stringify({schema:1,version:"preview",updated:Math.floor(Date.now()/1000),can_edit:!document.getElementById("drive").checked,state:"normal",pending:false,profiles:["Driver profile 1","Driver profile 2","Guest profile"].map((name,i)=>({key:ids[i],name,current:i===0,muted:selected.includes(ids[i])}))});
+  else{event.source.postMessage({csdk:1,id,error:{code:"unknown_method"}},"*");return;}
+  event.source.postMessage({csdk:1,id,result},"*");
+});
+document.getElementById("reset").onclick=()=>{selected=[];};
+document.getElementById("light").onchange=()=>{document.getElementById("panel").src="../panel/index.html";};
+</script></body></html>

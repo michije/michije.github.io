@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <!--ISA_SESSION-->
+  <title>ISA by driver profile</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <span class="eyebrow">DRIVER PROFILES</span>
+      <h1>ISA by driver profile</h1>
+      <p class="intro">Choose which driver profiles should keep the ISA speed warning muted.</p>
+    </header>
+    <section class="profiles-card" aria-label="ISA settings by driver profile">
+      <div class="list-heading"><span>Profile</span><span>Mute ISA</span></div>
+      <div id="profiles" aria-busy="true"></div>
+      <div id="empty" class="empty">Loading profiles…</div>
+    </section>
+    <footer>
+      <div class="status" role="status" aria-live="polite"><span id="dot" class="dot"></span><span id="status">Connecting…</span></div>
+      <p class="hint">Selections apply to each profile. Make changes while parked.</p>
+      <p id="error" class="error" role="alert" hidden></p>
+    </footer>
+  </main>
+</body>
+</html>
