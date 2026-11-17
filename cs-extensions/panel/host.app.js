@@ -24,6 +24,8 @@
   }
 
   // panel/bridge.js
+  var SETTING_ID = "dev.michije.isa-profiles.muted_profiles";
+  var localSettings = false;
   var nextID = 0;
   var pending = /* @__PURE__ */ new Map();
   window.addEventListener("message", (event) => {
@@ -83,10 +85,18 @@
     return result;
   }
   async function call(method, params = {}) {
+    if (method === "settings.set" && localSettings && localAvailable(method)) return localCall(method, params);
     try {
-      return await request(method, params);
+      const result = await request(method, params);
+      if (method === "settings.get") {
+        if (!Array.isArray(result == null ? void 0 : result.settings)) throw Object.assign(new Error("invalid_settings"), { code: "invalid_settings" });
+        localSettings = !result.settings.some((setting) => setting.id === SETTING_ID);
+        if (localSettings && localAvailable(method)) return localCall(method, params);
+      }
+      return result;
     } catch (error) {
       if (localAvailable(method) && ["not_found", "offline", "timeout", "unknown_method", "no_host", "busy", "failed"].includes(error.code)) {
+        if (method === "settings.get") localSettings = true;
         return localCall(method, params);
       }
       throw error;

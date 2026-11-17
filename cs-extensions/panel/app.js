@@ -33,6 +33,8 @@
   }
 
   // panel/bridge.js
+  var SETTING_ID = "dev.michije.isa-profiles.muted_profiles";
+  var localSettings = false;
   var nextID = 0;
   var pending = /* @__PURE__ */ new Map();
   window.addEventListener("message", (event) => {
@@ -92,10 +94,18 @@
     return result;
   }
   async function call(method, params = {}) {
+    if (method === "settings.set" && localSettings && localAvailable(method)) return localCall(method, params);
     try {
-      return await request(method, params);
+      const result = await request(method, params);
+      if (method === "settings.get") {
+        if (!Array.isArray(result == null ? void 0 : result.settings)) throw Object.assign(new Error("invalid_settings"), { code: "invalid_settings" });
+        localSettings = !result.settings.some((setting) => setting.id === SETTING_ID);
+        if (localSettings && localAvailable(method)) return localCall(method, params);
+      }
+      return result;
     } catch (error) {
       if (localAvailable(method) && ["not_found", "offline", "timeout", "unknown_method", "no_host", "busy", "failed"].includes(error.code)) {
+        if (method === "settings.get") localSettings = true;
         return localCall(method, params);
       }
       throw error;
@@ -124,7 +134,7 @@
 
   // panel/panel.js
   var $ = (id) => document.getElementById(id);
-  var SETTING_ID = "dev.michije.isa-profiles.muted_profiles";
+  var SETTING_ID2 = "dev.michije.isa-profiles.muted_profiles";
   var view = null;
   var selection = /* @__PURE__ */ new Set();
   var saving = false;
@@ -205,7 +215,7 @@
     try {
       const [data, settings] = await Promise.all([call("data.get", { name: "view" }), call("settings.get")]);
       const next = validateView(typeof data === "string" ? JSON.parse(data) : data);
-      const setting = (_a = settings == null ? void 0 : settings.settings) == null ? void 0 : _a.find((s) => s.id === SETTING_ID);
+      const setting = (_a = settings == null ? void 0 : settings.settings) == null ? void 0 : _a.find((s) => s.id === SETTING_ID2);
       const raw = Array.isArray(setting == null ? void 0 : setting.value) ? setting.value.join("\n") : setting == null ? void 0 : setting.value;
       if (typeof raw !== "string") throw new Error("invalid_settings");
       selection = parseSelection(raw);
@@ -241,7 +251,7 @@
     selection = wanted;
     render();
     try {
-      await call("settings.set", { id: SETTING_ID, value: serializeSelection(wanted) });
+      await call("settings.set", { id: SETTING_ID2, value: serializeSelection(wanted) });
       await mirrorLocal(wanted);
     } catch (error) {
       saveError = error.message;
