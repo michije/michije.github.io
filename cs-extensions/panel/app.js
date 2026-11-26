@@ -277,7 +277,9 @@
     } catch {
     }
     await refresh();
-    setInterval(refresh, 2e3);
+    setInterval(() => {
+      if (!document.hidden) refresh();
+    }, 2e3);
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) refresh();
     });
